@@ -20,7 +20,7 @@
 
 ## Installation
 
-The JAX installation process may differ depending on one's machine, so JAX needs to be [installed manually](https://github.com/google/jax#installation) by the user. Afterwards, ```open_clip_jax``` can be installed through ```pip install git+https://github.com/BobMcDear/open-clip-jax.git```.
+The JAX installation process may differ depending on one's machine, so JAX needs to be [installed manually](https://github.com/google/jax#installation) by the user (versions `0.4.19` through `0.4.27`, inclusive). Afterwards, ```open_clip_jax``` can be installed through ```pip install git+https://github.com/BobMcDear/open-clip-jax.git```.
 
 ## Usage
 
