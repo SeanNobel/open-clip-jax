@@ -6,7 +6,7 @@ CLIP (contrastive) loss.
 from typing import Any, Hashable, Optional
 
 import jax
-from flax.linen.dtypes import Array
+from jax import Array
 from jax import numpy as jnp
 from optax import softmax_cross_entropy_with_integer_labels
 

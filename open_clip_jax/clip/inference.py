@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import jax
 import tensorflow as tf
 from flax import linen as nn
-from flax.linen.dtypes import Array, Dtype
+from flax.linen.dtypes import Dtype
+from jax import Array
 from jax import numpy as jnp
 
 from .image_transforms import create_image_transforms

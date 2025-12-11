@@ -13,7 +13,7 @@ import jax
 import tensorflow as tf
 from flax import jax_utils
 from flax.core import frozen_dict
-from flax.linen.dtypes import Array
+from jax import Array
 from flax.training import checkpoints, train_state
 from flax.training.dynamic_scale import DynamicScale
 from jax import lax

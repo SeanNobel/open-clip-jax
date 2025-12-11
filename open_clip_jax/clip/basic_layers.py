@@ -6,7 +6,8 @@ General-purpose deep learning layers.
 from typing import Callable, Optional, Union, Tuple
 
 from flax import linen as nn
-from flax.linen.dtypes import Array, Dtype
+from flax.linen.dtypes import Dtype
+from jax import Array
 from jax import numpy as jnp
 
 
