@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
 	name='open_clip_jax',
-	version='0.0.5',
+	version='0.0.6',
 	description='Implementation of CLIP in JAX/Flax',
 	author='Borna Ahmadzadeh',
 	author_email='borna.ahz@gmail.com',
