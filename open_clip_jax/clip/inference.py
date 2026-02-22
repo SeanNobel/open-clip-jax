@@ -154,21 +154,23 @@ class CLIPInference:
 
     def encode_image(
         self,
-        image: Union[Image, List[Image]],
+        image: Union[Image, List[Image], Array],
         norm: bool = True,
         ) -> Array:
         """
         Computes CLIP embeddings for an input image or a list of images.
 
         Args:
-            image: Input image or list of images. The image type must be
-                consumable by TensorFlow, e.g., PIL image or NumPy array.
+            image: Input image or list of images, or array images (B, H, W, C).
+            The image type must be consumable by TensorFlow, e.g., PIL image or NumPy array.
             norm: If True, L2 normalizes the embeddings before returning.
         
         Returns:
             The CLIP embeddings for the input image(s).
         """
-        if not isinstance(image, list):
+        if hasattr(image, 'shape') and len(image.shape) == 4:
+            image = list(image)
+        elif not isinstance(image, list):
             image = [image]
 
         image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
