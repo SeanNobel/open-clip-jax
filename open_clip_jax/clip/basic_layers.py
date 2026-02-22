@@ -93,7 +93,7 @@ class MultiHeadAttention(nn.MultiHeadDotProductAttention):
         See base class.
         """
         inputs_kv = inputs_kv or inputs_q
-        return super().__call__(inputs_q, inputs_kv, mask, deterministic)
+        return super().__call__(inputs_q, inputs_kv, mask=mask, deterministic=deterministic)
 
 
 def global_avg_pool(
