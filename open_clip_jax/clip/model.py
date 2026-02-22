@@ -65,23 +65,8 @@ class CLIP(nn.Module):
             Projected image and text vectors. The former is scaled by a
             learnable temperature coefficient if temp_init is not None.
         """
-        image_output = self.image_model(image_input)
-        text_output = self.text_model(text_input)
-
-        image_proj = nn.Dense(
-            features=self.proj_dim,
-            use_bias=self.proj_bias,
-            dtype=self.dtype,
-            )(image_output)
-        text_proj = nn.Dense(
-            features=self.proj_dim,
-            use_bias=self.proj_bias,
-            dtype=self.dtype,
-            )(text_output)
-
-        if self.norm:
-            image_proj = l2_norm(image_proj)
-            text_proj = l2_norm(text_proj)
+        image_proj = self.encode_image(image_input, norm=self.norm)
+        text_proj = self.encode_text(text_input, norm=self.norm)
 
         if self.temp_init:
             temp = self.param(
@@ -91,3 +76,35 @@ class CLIP(nn.Module):
             image_proj = jnp.exp(temp) * image_proj
 
         return image_proj, text_proj
+
+    @nn.compact
+    def encode_image(self, image_input: Array, norm: bool = True) -> Array:
+        image_output = self.image_model(image_input)
+        
+        image_proj = nn.Dense(
+            features=self.proj_dim,
+            use_bias=self.proj_bias,
+            dtype=self.dtype,
+            name='Dense_0' # explicitly naming the layer to match the keys of the pretrained weights
+            )(image_output)
+            
+        if norm:
+            image_proj = l2_norm(image_proj)
+            
+        return image_proj
+
+    @nn.compact
+    def encode_text(self, text_input: Array, norm: bool = True) -> Array:
+        text_output = self.text_model(text_input)
+        
+        text_proj = nn.Dense(
+            features=self.proj_dim,
+            use_bias=self.proj_bias,
+            dtype=self.dtype,
+            name='Dense_1' # explicitly naming the layer to match the keys of the pretrained weights
+            )(text_output)
+            
+        if norm:
+            text_proj = l2_norm(text_proj)
+            
+        return text_proj

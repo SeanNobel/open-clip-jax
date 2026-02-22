@@ -174,26 +174,11 @@ class CLIPInference:
         image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
         vars = self.calculate_similarity.keywords['vars']
 
-        def _encode_image_fn(module, x):
-            image_output = module.image_model(x)
-            image_proj = nn.Dense(
-                features=module.proj_dim,
-                use_bias=module.proj_bias,
-                dtype=module.dtype,
-                name='Dense_0'
-            )(image_output)
-            return image_proj
-
         @jax.jit
         def _apply_fn(variables, x):
-            return self.model.apply(variables, x, method=_encode_image_fn)
+            return self.model.apply(variables, x, norm=norm, method=self.model.encode_image)
 
-        image_proj = _apply_fn(vars, image_input)
-
-        if norm:
-            image_proj = l2_norm(image_proj)
-
-        return image_proj
+        return _apply_fn(vars, image_input)
 
     def encode_text(
         self,
@@ -210,26 +195,14 @@ class CLIPInference:
         Returns:
             The CLIP embeddings for the input text(s).
         """
+        if not isinstance(text, list):
+            text = [text]
+            
         text_input = tokenize(text)._numpy()
         vars = self.calculate_similarity.keywords['vars']
 
-        def _encode_text_fn(module, x):
-            text_output = module.text_model(x)
-            text_proj = nn.Dense(
-                features=module.proj_dim,
-                use_bias=module.proj_bias,
-                dtype=module.dtype,
-                name='Dense_1'
-            )(text_output)
-            return text_proj
-
         @jax.jit
         def _apply_fn(variables, x):
-            return self.model.apply(variables, x, method=_encode_text_fn)
+            return self.model.apply(variables, x, norm=norm, method=self.model.encode_text)
 
-        text_proj = _apply_fn(vars, text_input)
-
-        if norm:
-            text_proj = l2_norm(text_proj)
-
-        return text_proj
+        return _apply_fn(vars, text_input)
