@@ -168,12 +168,16 @@ class CLIPInference:
         Returns:
             The CLIP embeddings for the input image(s).
         """
-        if hasattr(image, 'shape') and len(image.shape) == 4:
-            image = list(image)
-        elif not isinstance(image, list):
-            image = [image]
+        if isinstance(image, Array):
+            # skip transforms if the input is already an array
+            assert image.ndim == 4, 'When input is an array, it must have shape (B, H, W, C).'
+            image_input = image
+        else:
+            if not isinstance(image, list):
+                image = [image]
 
-        image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
+            image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
+            
         vars = self.calculate_similarity.keywords['vars']
 
         @jax.jit
