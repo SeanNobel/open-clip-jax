@@ -16,7 +16,7 @@ from jax import numpy as jnp
 
 from .image_transforms import create_image_transforms
 from .factory import create_model_with_params
-from .model import CLIP
+from .model import CLIP, l2_norm
 from .tokenizer import tokenize
 
 
@@ -151,3 +151,85 @@ class CLIPInference:
             image_input=image_input,
             text_input=text_input,
             )
+
+    def encode_image(
+        self,
+        image: Union[Image, List[Image]],
+        norm: bool = True,
+        ) -> Array:
+        """
+        Computes CLIP embeddings for an input image or a list of images.
+
+        Args:
+            image: Input image or list of images. The image type must be
+                consumable by TensorFlow, e.g., PIL image or NumPy array.
+            norm: If True, L2 normalizes the embeddings before returning.
+        
+        Returns:
+            The CLIP embeddings for the input image(s).
+        """
+        if not isinstance(image, list):
+            image = [image]
+
+        image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
+        vars = self.calculate_similarity.keywords['vars']
+
+        def _encode_image_fn(module, x):
+            image_output = module.image_model(x)
+            image_proj = nn.Dense(
+                features=module.proj_dim,
+                use_bias=module.proj_bias,
+                dtype=module.dtype,
+                name='Dense_0'
+            )(image_output)
+            return image_proj
+
+        @jax.jit
+        def _apply_fn(variables, x):
+            return self.model.apply(variables, x, method=_encode_image_fn)
+
+        image_proj = _apply_fn(vars, image_input)
+
+        if norm:
+            image_proj = l2_norm(image_proj)
+
+        return image_proj
+
+    def encode_text(
+        self,
+        text: Union[str, List[str]],
+        norm: bool = True,
+        ) -> Array:
+        """
+        Computes CLIP embeddings for an input text or a list of texts.
+
+        Args:
+            text: Input text or list of texts.
+            norm: If True, L2 normalizes the embeddings before returning.
+        
+        Returns:
+            The CLIP embeddings for the input text(s).
+        """
+        text_input = tokenize(text)._numpy()
+        vars = self.calculate_similarity.keywords['vars']
+
+        def _encode_text_fn(module, x):
+            text_output = module.text_model(x)
+            text_proj = nn.Dense(
+                features=module.proj_dim,
+                use_bias=module.proj_bias,
+                dtype=module.dtype,
+                name='Dense_1'
+            )(text_output)
+            return text_proj
+
+        @jax.jit
+        def _apply_fn(variables, x):
+            return self.model.apply(variables, x, method=_encode_text_fn)
+
+        text_proj = _apply_fn(vars, text_input)
+
+        if norm:
+            text_proj = l2_norm(text_proj)
+
+        return text_proj
