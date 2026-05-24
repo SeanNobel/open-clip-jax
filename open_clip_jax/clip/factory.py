@@ -156,12 +156,12 @@ def create_model(
             )
 
     elif model_name.startswith('convnext'):
-        conf = configs['image_model']
+        conf = dict(configs['image_model']) # shallow copy
         depths = tuple(conf.pop('depths'))
         out_dims = tuple(conf.pop('out_dims'))
         image_model = ConvNeXt(
             depths, out_dims,
-            **configs['image_model'],
+            **conf,
             grad_checkpoint=grad_checkpoint,
             dtype=dtype,
             )
