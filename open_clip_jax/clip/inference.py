@@ -16,7 +16,7 @@ from jax import numpy as jnp
 
 from .image_transforms import create_image_transforms
 from .factory import create_model_with_params
-from .model import CLIP
+from .model import CLIP, l2_norm
 from .tokenizer import tokenize
 
 
@@ -151,3 +151,64 @@ class CLIPInference:
             image_input=image_input,
             text_input=text_input,
             )
+
+    def encode_image(
+        self,
+        image: Union[Image, List[Image], Array],
+        norm: bool = True,
+        ) -> Array:
+        """
+        Computes CLIP embeddings for an input image or a list of images.
+
+        Args:
+            image: Input image or list of images, or array images (B, H, W, C).
+            The image type must be consumable by TensorFlow, e.g., PIL image or NumPy array.
+            norm: If True, L2 normalizes the embeddings before returning.
+        
+        Returns:
+            The CLIP embeddings for the input image(s).
+        """
+        if isinstance(image, Array):
+            # skip transforms if the input is already an array
+            assert image.ndim == 4, 'When input is an array, it must have shape (B, H, W, C).'
+            image_input = image
+        else:
+            if not isinstance(image, list):
+                image = [image]
+
+            image_input = tf.stack(list(map(self.image_transforms, image)))._numpy()
+            
+        vars = self.calculate_similarity.keywords['vars']
+
+        @jax.jit
+        def _apply_fn(variables, x):
+            return self.model.apply(variables, x, norm=norm, method=self.model.encode_image)
+
+        return _apply_fn(vars, image_input)
+
+    def encode_text(
+        self,
+        text: Union[str, List[str]],
+        norm: bool = True,
+        ) -> Array:
+        """
+        Computes CLIP embeddings for an input text or a list of texts.
+
+        Args:
+            text: Input text or list of texts.
+            norm: If True, L2 normalizes the embeddings before returning.
+        
+        Returns:
+            The CLIP embeddings for the input text(s).
+        """
+        if not isinstance(text, list):
+            text = [text]
+            
+        text_input = tokenize(text)._numpy()
+        vars = self.calculate_similarity.keywords['vars']
+
+        @jax.jit
+        def _apply_fn(variables, x):
+            return self.model.apply(variables, x, norm=norm, method=self.model.encode_text)
+
+        return _apply_fn(vars, text_input)
